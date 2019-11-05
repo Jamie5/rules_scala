@@ -5,12 +5,14 @@ scala_library(
     name = "test_target",
     srcs = ["A.scala"],
     deps = [":direct_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "direct_dep",
     srcs = ["B.scala"],
     deps = [":plus_one_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
@@ -18,9 +20,11 @@ scala_library(
     srcs = ["C.scala"],
     exports = ["exported_dep"],
     deps = [":exported_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "exported_dep",
     srcs = ["D.scala"],
+    unused_dependency_checker_mode = "error",
 )

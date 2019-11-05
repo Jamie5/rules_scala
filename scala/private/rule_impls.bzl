@@ -212,6 +212,9 @@ CurrentTarget: {current_target}
         cjars_list = cjars.to_list()
         direct_jars = _join_path(cjars_list)
         direct_targets = ",".join([str(labels[j.path]) for j in cjars_list])
+        transitive_cjars_list = transitive_compile_jars.to_list()
+        indirect_jars = _join_path(transitive_cjars_list)
+        indirect_targets = ",".join([str(labels[j.path]) for j in transitive_cjars_list])
 
         ignored_targets = ",".join([str(d) for d in unused_dependency_checker_ignored_targets])
 
@@ -220,15 +223,20 @@ CurrentTarget: {current_target}
         optional_scalac_args = """
 DirectJars: {direct_jars}
 DirectTargets: {direct_targets}
+IndirectJars: {indirect_jars}
+IndirectTargets: {indirect_targets}
 IgnoredTargets: {ignored_targets}
 CurrentTarget: {current_target}
         """.format(
             direct_jars = direct_jars,
             direct_targets = direct_targets,
+            indirect_jars = indirect_jars,
+            indirect_targets = indirect_targets,
             ignored_targets = ignored_targets,
             current_target = current_target,
         )
-    if is_dependency_analyzer_off(ctx) and not _is_plus_one_deps_off(ctx):
+    is_plus_one_deps_on = not _is_plus_one_deps_off(ctx)
+    if is_dependency_analyzer_off(ctx) and is_plus_one_deps_on:
         compiler_classpath_jars = transitive_compile_jars
 
     plugins_list = plugins.to_list()
@@ -259,6 +267,7 @@ SourceJars: {srcjars}
 DependencyAnalyzerMode: {dependency_analyzer_mode}
 UnusedDependencyCheckerMode: {unused_dependency_checker_mode}
 StatsfileOutput: {statsfile_output}
+PlusOneDeps: {plus_one_deps}
 """.format(
         out = output.path,
         manifest = manifest.path,
@@ -282,6 +291,7 @@ StatsfileOutput: {statsfile_output}
         dependency_analyzer_mode = dependency_analyzer_mode,
         unused_dependency_checker_mode = unused_dependency_checker_mode,
         statsfile_output = statsfile.path,
+        plus_one_deps = is_plus_one_deps_on,
     )
 
     argfile = ctx.actions.declare_file(

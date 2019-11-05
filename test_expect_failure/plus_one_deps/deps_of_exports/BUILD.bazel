@@ -6,11 +6,13 @@ scala_library(
     name = "test_target_using_facade",
     srcs = ["A.scala"],
     deps = [":facade"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "facade",
     exports = [":direct_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 #example with target in deps & exports
@@ -18,6 +20,7 @@ scala_library(
     name = "test_target",
     srcs = ["A.scala"],
     deps = [":direct_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
@@ -25,6 +28,7 @@ scala_library(
     srcs = ["B.scala"],
     exports = [":exported_dep"],
     deps = [":exported_dep"],
+    unused_dependency_checker_mode = "error",
 )
 
 #common
@@ -32,9 +36,11 @@ scala_library(
     name = "exported_dep",
     srcs = ["C.scala"],
     deps = [":plus_one_dep_of_exported"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "plus_one_dep_of_exported",
     srcs = ["D.scala"],
+    unused_dependency_checker_mode = "error",
 )

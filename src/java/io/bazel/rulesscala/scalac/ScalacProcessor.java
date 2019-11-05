@@ -187,15 +187,19 @@ class ScalacProcessor implements Processor {
       pluginParams.addAll(Arrays.asList(dependencyAnalyzerParams));
     } else if (isModeEnabled(ops.unusedDependencyCheckerMode)) {
       String[] directTargets = encodeBazelTargets(ops.directTargets);
+      String[] indirectTargets = encodeBazelTargets(ops.indirectTargets);
       String[] ignoredTargets = encodeBazelTargets(ops.ignoredTargets);
       String currentTarget = encodeBazelTarget(ops.currentTarget);
 
       String[] unusedDependencyCheckerParams = {
         "-P:unused-dependency-checker:direct-jars:" + String.join(":", ops.directJars),
         "-P:unused-dependency-checker:direct-targets:" + String.join(":", directTargets),
+        "-P:unused-dependency-checker:indirect-jars:" + String.join(":", ops.indirectJars),
+        "-P:unused-dependency-checker:indirect-targets:" + String.join(":", indirectTargets),
         "-P:unused-dependency-checker:ignored-targets:" + String.join(":", ignoredTargets),
         "-P:unused-dependency-checker:mode:" + ops.unusedDependencyCheckerMode,
         "-P:unused-dependency-checker:current-target:" + currentTarget,
+        "-P:unused-dependency-checker:plus-one-deps:" + (ops.plusOneDeps ? "yes" : "no"),
       };
       pluginParams.addAll(Arrays.asList(unusedDependencyCheckerParams));
     }

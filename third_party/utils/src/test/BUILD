@@ -5,6 +5,7 @@ load("//scala:scala.bzl", "scala_library")
 scala_library(
     name = "test_util",
     srcs = [
+        "io/bazel/rulesscala/utils/JavaCompileUtil.scala",
         "io/bazel/rulesscala/utils/TestUtil.scala",
     ],
     visibility = ["//visibility:public"],

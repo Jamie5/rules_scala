@@ -119,6 +119,7 @@ scala_binary(
     main_class = "a.b.c",
     visibility = ["//visibility:public"],
     deps = [":test_proto_nogrpc"],
+    unused_dependency_checker_mode = "error",
 )
 
 java_proto_library(
@@ -156,6 +157,7 @@ scala_test(
     deps = [
         ":test_proto",
     ],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_test(
@@ -166,4 +168,5 @@ scala_test(
     deps = [
         ":test_external_dep",
     ],
+    unused_dependency_checker_mode = "error",
 )

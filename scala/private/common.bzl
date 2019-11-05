@@ -74,7 +74,7 @@ def _collect_jars_when_dependency_analyzer_is_off(
             add_labels_of_jars_to(
                 jars2labels,
                 dep_target,
-                [],
+                java_provider.transitive_compile_time_jars.to_list(), # XXX this includes too many???
                 java_provider.compile_jars.to_list(),
             )
 

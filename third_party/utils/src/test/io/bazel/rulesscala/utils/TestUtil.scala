@@ -1,12 +1,19 @@
 package third_party.utils.src.test.io.bazel.rulesscala.utils
 
+import java.nio.file.Path
 import java.nio.file.Paths
-
 import scala.reflect.internal.util.BatchSourceFile
+import scala.reflect.io.AbstractFile
+import scala.reflect.io.Directory
+import scala.reflect.io.PlainDirectory
 import scala.reflect.io.VirtualDirectory
 import scala.tools.cmd.CommandLineParser
+import scala.tools.nsc.classpath.DirectoryClassPath
 import scala.tools.nsc.reporters.StoreReporter
-import scala.tools.nsc.{CompilerCommand, Global, Settings}
+import scala.tools.nsc.CompilerCommand
+import scala.tools.nsc.Global
+import scala.tools.nsc.Settings
+import scala.tools.nsc.classpath.AggregateClassPath
 
 object TestUtil {
 
@@ -19,9 +26,9 @@ object TestUtil {
     else s"-P:$pluginName:$name:${values.mkString(":")}"
   }
 
-  def runCompiler(code: String, compileOptions: String, extraClasspath: List[String], toolboxPluginOptions: String): List[String] = {
+  def runCompiler(code: String, compileOptions: String, extraClasspath: List[String], toolboxPluginOptions: String, extraClasspathXX: Vector[AbstractFile] = Vector.empty): List[String] = {
     val fullCompileOptions: String = getCompileOptions(code, compileOptions, extraClasspath, toolboxPluginOptions)
-    val reporter: StoreReporter =  eval(code, fullCompileOptions)
+    val reporter: StoreReporter = eval(code, fullCompileOptions, Some(extraClasspathXX))
     reporter.infos.collect({ case msg if msg.severity == reporter.ERROR => msg.msg }).toList
   }
 
@@ -39,18 +46,31 @@ object TestUtil {
 
   /** Evaluate using global instance instead of toolbox because toolbox seems
     * to fail to typecheck code that comes from external dependencies. */
-  private def eval(code: String, compileOptions: String = ""): StoreReporter = {
+  private def eval(code: String, compileOptions: String = "", classPathsOpt: Option[Vector[AbstractFile]] = None, outputOpt: Option[AbstractFile] = None): StoreReporter = {
     // TODO: Optimize and cache global.
     val options = CommandLineParser.tokenize(compileOptions)
     val reporter = new StoreReporter()
     val settings = new Settings(println)
     val _ = new CompilerCommand(options, settings)
-    settings.outputDirs.setSingleOutput(new VirtualDirectory("(memory)", None))
+    val output = outputOpt.getOrElse(new VirtualDirectory("(memory)", None))
+    settings.outputDirs.setSingleOutput(output)
     val global = new Global(settings, reporter)
+    classPathsOpt.foreach { newCps =>
+      val classPaths = newCps.map(dep => new DirectoryClassPath(dep.file))
+      val mergedClassPath = new AggregateClassPath(Vector(global.classPath) ++ classPaths)
+      global.platform.updateClassPath(Map(global.classPath -> mergedClassPath))
+    }
     val run = new global.Run
     val toCompile = new BatchSourceFile("<wrapper-init>", code)
     run.compileSources(List(toCompile))
     reporter
+  }
+
+  def compileSourcesForUse(code: String, deps: Vector[Path], output: Path): Unit = {
+    val fullCompileOptions: String = getCompileOptions(code, "", deps.map(_.toString), "")
+    val (reporter) = eval(code, fullCompileOptions, outputOpt = Some(new PlainDirectory(new Directory(output.toFile))))
+    val errors = reporter.infos.collect({ case msg if msg.severity == reporter.ERROR => msg.msg })
+    assert(errors.isEmpty, errors)
   }
 
   lazy val baseDir = System.getProperty("user.dir")

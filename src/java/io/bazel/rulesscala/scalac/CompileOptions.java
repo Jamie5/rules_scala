@@ -28,6 +28,7 @@ public class CompileOptions {
   public final String unusedDependencyCheckerMode;
   public final String currentTarget;
   public final String statsfile;
+  public final boolean plusOneDeps;
 
   public CompileOptions(List<String> args) {
     Map<String, String> argMap = buildArgMap(args);
@@ -38,6 +39,7 @@ public class CompileOptions {
     scalaOpts = getCommaList(argMap, "ScalacOpts");
     printCompileTime = booleanGetOrFalse(argMap, "PrintCompileTime");
     expectJavaOutput = booleanGetOrTrue(argMap, "ExpectJavaOutput");
+    plusOneDeps = booleanGetOrFalse(argMap, "PlusOneDeps");
     pluginArgs = buildPluginArgs(getOrEmpty(argMap, "Plugins"));
     classpath = getOrError(argMap, "Classpath", "Must supply the classpath arg");
     files = getCommaList(argMap, "Files");

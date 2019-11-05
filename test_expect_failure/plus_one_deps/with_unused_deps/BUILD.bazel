@@ -7,15 +7,18 @@ scala_library(
         ":b",
         ":c",
     ],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "b",
     srcs = ["B.scala"],
     deps = [":c"],
+    unused_dependency_checker_mode = "error",
 )
 
 scala_library(
     name = "c",
     srcs = ["C.scala"],
+    unused_dependency_checker_mode = "error",
 )
