@@ -2,6 +2,7 @@ package third_party.dependency_analyzer.src.test.io.bazel.rulesscala.dependencya
 
 import org.scalatest._
 import java.nio.file.Paths
+import scala.tools.nsc.typechecker.StdAttachments
 import third_party.utils.src.test.io.bazel.rulesscala.utils.TestUtil._
 
 class StrictDepsTest extends FunSuite {
@@ -10,10 +11,11 @@ class StrictDepsTest extends FunSuite {
   def compileWithDependencyAnalyzer(code: String, withDirect: List[String] = Nil, withIndirect: List[(String, String)] = Nil): List[String] = {
     val toolboxPluginOptions: String = {
       val jar = System.getProperty(s"plugin.jar.location")
-      val start= jar.indexOf(s"/third_party/$pluginName")
+      val start = jar.indexOf(s"/third_party/$pluginName") + 1
       // this substring is needed due to issue: https://github.com/bazelbuild/bazel/issues/2475
       val jarInRelationToBaseDir = jar.substring(start, jar.length)
-      val pluginPath = Paths.get(baseDir, jarInRelationToBaseDir).toAbsolutePath
+      val modBaseDir = Paths.get(baseDir).getParent.resolve("io_bazel_rules_scala")
+      val pluginPath = modBaseDir.resolve(jarInRelationToBaseDir).toAbsolutePath
       s"-Xplugin:$pluginPath -Jdummy=${pluginPath.toFile.lastModified}"
     }
 
@@ -40,6 +42,8 @@ class StrictDepsTest extends FunSuite {
       """.stripMargin
 
     val commonsTarget = "//commons:Target"
+
+    classOf[StdAttachments#OriginalTreeAttachment]
 
     val indirect = List(apacheCommonsClasspath -> encodeLabel(commonsTarget))
     compileWithDependencyAnalyzer(testCode, withIndirect = indirect).expectErrorOn(commonsTarget)

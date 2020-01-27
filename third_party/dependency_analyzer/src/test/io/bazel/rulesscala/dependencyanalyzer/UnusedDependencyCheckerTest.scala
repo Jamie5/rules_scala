@@ -8,10 +8,11 @@ class UnusedDependencyCheckerTest extends FunSuite {
   def compileWithUnusedDependencyChecker(code: String, withDirect: List[(String, String)] = Nil): List[String] = {
     val toolboxPluginOptions: String = {
       val jar = System.getProperty("plugin.jar.location")
-      val start = jar.indexOf("/third_party/dependency_analyzer")
+      val start = jar.indexOf(s"/third_party/dependency_analyzer") + 1
       // this substring is needed due to issue: https://github.com/bazelbuild/bazel/issues/2475
       val jarInRelationToBaseDir = jar.substring(start, jar.length)
-      val pluginPath = Paths.get(baseDir, jarInRelationToBaseDir).toAbsolutePath
+      val modBaseDir = Paths.get(baseDir).getParent.resolve("io_bazel_rules_scala")
+      val pluginPath = modBaseDir.resolve(jarInRelationToBaseDir).toAbsolutePath
       s"-Xplugin:$pluginPath -Jdummy=${pluginPath.toFile.lastModified}"
     }
 
