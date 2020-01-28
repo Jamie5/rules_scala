@@ -13,8 +13,10 @@ scala_test(
     srcs = [
         "io/bazel/rulesscala/dependencyanalyzer/AstUsedJarFinderTest.scala",
     ],
+    unused_dependency_checker_mode = "off",
     jvm_flags = common_jvm_flags,
     deps = [
+        "//external:io_bazel_rules_scala/dependency/scala/scala_compiler",
         "//external:io_bazel_rules_scala/dependency/scala/scala_library",
         "//external:io_bazel_rules_scala/dependency/scala/scala_reflect",
         "//third_party/dependency_analyzer/src/main:dependency_analyzer",

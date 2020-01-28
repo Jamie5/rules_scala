@@ -66,10 +66,10 @@ class DependencyAnalyzer(val global: Global) extends Plugin {
 
   private def runAnalysis(): Unit = {
     val usedJars = findUsedJars
-    val usedJarPaths = if (!isWindows) usedJars.map(_.path) else usedJars.map(_.path.replaceAll("\\\\", "/"))
+    val usedJarPaths = usedJars.map { case (x, y) => x.path -> y }
 
     if (settings.unusedDepsMode != AnalyzerMode.Off) {
-      reportUnusedDepsFoundIn(usedJarPaths)
+      reportUnusedDepsFoundIn(usedJarPaths.keySet)
     }
 
     if (settings.strictDepsMode != AnalyzerMode.Off) {
@@ -77,16 +77,18 @@ class DependencyAnalyzer(val global: Global) extends Plugin {
     }
   }
 
-  private def reportIndirectTargetsFoundIn(usedJarPaths: Set[String]): Unit = {
+  private def reportIndirectTargetsFoundIn(usedJarPaths: Map[String, global.Position]): Unit = {
     val errors =
       usedJarPaths
-        .filterNot(settings.directTargetSet.jarSet.contains)
-        .flatMap(settings.indirectTargetSet.targetFromJarOpt)
-        .map { target =>
-          s"""Target '$target' is used but isn't explicitly declared, please add it to the deps.
-             |You can use the following buildozer command:
-             |buildozer 'add deps $target' ${settings.currentTarget}""".stripMargin
+        .filterNot { case (k, v) => settings.directTargetSet.jarSet.contains(k) }
+        .flatMap { case (k, v) =>
+          settings.indirectTargetSet.targetFromJarOpt(k).map { target =>
+            s"""Target '$target' is used but isn't explicitly declared, please add it to the deps.
+               |You can use the following buildozer command:
+               |buildozer 'add deps $target' ${settings.currentTarget}""".stripMargin -> v
+          }
         }
+        .toSet
 
     warnOrError(settings.strictDepsMode, errors)
   }
@@ -109,7 +111,7 @@ class DependencyAnalyzer(val global: Global) extends Plugin {
         s"""Target '$target' is specified as a dependency to ${settings.currentTarget} but isn't used, please remove it from the deps.
            |You can use the following buildozer command:
            |buildozer 'remove deps $target' ${settings.currentTarget}
-           |""".stripMargin
+           |""".stripMargin -> (global.NoPosition: global.Position)
       }
 
     warnOrError(settings.unusedDepsMode, toWarnOrError)
@@ -117,21 +119,21 @@ class DependencyAnalyzer(val global: Global) extends Plugin {
 
   private def warnOrError(
     analyzerMode: AnalyzerMode,
-    errors: Set[String]
+    errors: Set[(String, global.Position)]
   ): Unit = {
-    val reportFunction: String => Unit = analyzerMode match {
-      case AnalyzerMode.Error => global.reporter.error(global.NoPosition, _)
-      case AnalyzerMode.Warn => global.reporter.warning(global.NoPosition, _)
-      case AnalyzerMode.Off => _ => ()
+    val reportFunction: (String, global.Position) => Unit = analyzerMode match {
+      case AnalyzerMode.Error => (s, p) => global.reporter.error(p, s)
+      case AnalyzerMode.Warn => (s, p) => global.reporter.warning(p, s)
+      case AnalyzerMode.Off => (_, _) => ()
     }
 
-    errors.foreach(reportFunction)
+    errors.foreach { case (a, b) => reportFunction(a, b) }
   }
 
-  private def findUsedJars: Set[AbstractFile] = {
+  private def findUsedJars: Map[AbstractFile, global.Position] = {
     settings.dependencyTrackingMethod match {
       case DependencyTrackingMethod.HighLevel =>
-        new HighLevelCrawlUsedJarFinder(global).findUsedJars
+        new HighLevelCrawlUsedJarFinder(global).findUsedJars.map(x => x -> global.NoPosition).toMap
       case DependencyTrackingMethod.Ast =>
         new AstUsedJarFinder(global).findUsedJars
     }

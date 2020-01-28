@@ -452,4 +452,28 @@ class AstUsedJarFinderTest extends FunSuite {
       }
     }
   }
+
+  test("java interface method argument is directXXX") {
+    withSandbox { sandbox =>
+      sandbox.compileJava(
+        className = "Category",
+        code =
+          s"""
+             |@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+             |@java.lang.annotation.Inherited
+             |public @interface Category {
+             |    Class<?>[] value();
+             |}
+             |""".stripMargin
+      )
+      sandbox.compileWithoutAnalyzer("abstract class UnitTests")
+      sandbox.checkStrictDepsErrorsReported(
+        """
+          |@Category(Array(classOf[UnitTests]))
+          |class C
+          |""".stripMargin,
+        expectedStrictDeps = List("UnitTests", "Category")
+      )
+    }
+  }
 }
